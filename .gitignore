@@ -1,0 +1,9 @@
+*.pdf
+*.ppt
+*.docx
+*.doc
+*.asm
+*.jar
+**/cmake-build-debug/
+**/*.zip
+**/.idea/
