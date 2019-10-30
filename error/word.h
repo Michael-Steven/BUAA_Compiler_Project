@@ -18,6 +18,7 @@ static char mark[40][10] = {"IDENFR", "INTCON", "CHARCON", "STRCON", "CONSTTK", 
 Element sym;    // "getsym()" save a word struct in sym
 Element pre_read1, pre_read2, pre_read3;
 static int var1 = 0, var2 = 0, var3 = 0;
+static int line = 1;
 char c;         // used to getchar()
 char s[1000];   // temp var to save a string
 static char return_func[100][1000] = {};
@@ -33,7 +34,7 @@ int gettoken();
 
 void print_word(Element single_word);
 
-void handle_error(char err[]);
+void handle_error(char err[], char type);
 
 int handle_IDENFR();
 

@@ -21,6 +21,9 @@ int test_word() {
 
 int getsym() {
     while (isspace(c)) {
+        if (c == '\n') {
+            line++;
+        }
         c = getchar();
     }
     if (c == EOF) {
@@ -35,13 +38,7 @@ int getsym() {
 }
 
 int gettoken() {
-    if (isalpha(c) || c == '_') {
-        return handle_IDENFR();
-    }
-    else if (isdigit(c)) {
-        return handle_INTCON();
-    }
-    else if (c == '\'') {
+    if (c == '\'') {
         return handle_CHARCON();
     }
     else if (c == '\"') {
@@ -87,7 +84,7 @@ int gettoken() {
             c = getchar();
         }
         else {
-            handle_error("!= error");
+            handle_error("!= error", 'a');
         }
     }
     else if (c == ';') {
@@ -130,29 +127,40 @@ int gettoken() {
         strcpy(sym.content, "}");
         c = getchar();
     }
-    else {
-        handle_error("unrecognized character");
-        return -1;
+    else if (isalpha(c) || c == '_') {
+        return handle_IDENFR();
     }
     return 0;
 }
 
 void print_word(Element single_word) {
-    printf("%s %s\n", mark[single_word.type], single_word.content);
+    //printf("%s %s\n", mark[single_word.type], single_word.content);
 }
 
-void handle_error(char err[]) {
-    printf("%s\n", err);
-    //exit(0);
+void handle_error(char err[], char type) {
+    printf("%d %c\n", line, type);
+    //printf("%s\n", err);
+}
+
+int search(char a) {
+    if (a >= ' ' && a <= '~' && a != '+' && a != '-' && a != '*' && a != '/' && a != '>' && a != '<' &&
+        a != '!' && a != '=' && a != ';' && a != ',' && a != '(' && a != ')' && a != '[' && a != ']' &&
+        a != '{' && a != '}' && a != ' ' && a != '\n' && a != '\'' && a != '\"' && a != EOF) {
+        return 1;
+    }
+    return 0;
 }
 
 int handle_IDENFR() {
     int i = 0;
     s[i++] = c;
     while ((c = getchar())) {
-        if (!isalnum(c) && c != '_') {
+        if (!search(c)) {
             break;
         }
+//        if (!isalnum(c) && c != '_') {
+//            break;
+//        }
         s[i++] = c;
     }
     s[i] = '\0';
@@ -209,8 +217,29 @@ int handle_IDENFR() {
         strcpy(sym.content, "return");
     }
     else {
-        sym.type = 0;
-        strcpy(sym.content, s);
+        int i, isnum = 1, isidentifier = 1;
+        for (i = 0; i < strlen(s); i++) {
+            if (!(i == 0 && (isalpha(s[i]) || s[i] == '_')) || !(i > 0 && (isalnum(s[i]) || s[i] == '_'))) {
+                isidentifier = 0;
+            }
+            if (!(i == 0 && isnumber(s[i])) || !(i > 0 && isnumber(s[i]) && s[0] != '0')) {
+                isnum = 0;
+            }
+        }
+        if (isidentifier) {
+            sym.type = 0;
+            strcpy(sym.content, s);
+        }
+        else if (isnum) {
+            if (s[0] == '0' && isdigit(s[1])) {
+                handle_error("0 at head of an unsigned integer", 'a');
+            }
+            sym.type = 1;
+            strcpy(sym.content, s);
+        }
+        else {
+
+        }
     }
     return 0;
 }
@@ -226,8 +255,8 @@ int handle_INTCON() {
     }
     s[i] = '\0';
     if (s[0] == '0' && isdigit(s[1])) {
-        handle_error("0 at head of an unsigned integer");
-        return -1;
+        handle_error("0 at head of an unsigned integer", 'a');
+        //return -1;
     }
     sym.type = 1;
     strcpy(sym.content, s);
@@ -237,13 +266,17 @@ int handle_INTCON() {
 int handle_CHARCON() {
     int i = 0;
     c = getchar();
+    if (c != '+' && c != '-' && c != '*' && c != '/' && c != '_' && !isalnum(c)) {
+        handle_error("not a CHARCON", 'a');
+        //return -1;
+    }
     s[i++] = c;
     s[i] = '\0';
     sym.type = 2;
     strcpy(sym.content, s);
     c = getchar();
     if (c != '\'') {
-        handle_error("handle_CHARCON error");
+        handle_error("handle_CHARCON error", 'a');
         return -1;
     }
     c = getchar();
@@ -262,7 +295,7 @@ int handle_STRCON() {
     sym.type = 3;
     strcpy(sym.content, s);
     if (c != '\"') {
-        handle_error("handle_STRCON error");
+        handle_error("handle_STRCON error", 'a');
         return -1;
     }
     c = getchar();

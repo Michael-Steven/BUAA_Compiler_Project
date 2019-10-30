@@ -7,11 +7,11 @@
 
 int main() {
     freopen("testfile.txt", "r", stdin);
-    freopen("output.txt", "w", stdout);
+    freopen("error.txt", "w", stdout);
     c = getchar();
     getsym();
     if (program() < 0) {
-        printf("compile error\n");
+        //printf("compile error\n");
     }
     return 0;
 }
@@ -28,7 +28,7 @@ int program() {
         }
     }
     check(main_func())
-    printf("<程序>\n");
+    //printf("<程序>\n");
     return 0;
 }
 
@@ -48,7 +48,7 @@ int constant_specification() {
         print_word(sym);
         getsym();
     }
-    printf("<常量说明>\n");
+    //printf("<常量说明>\n");
     return 0;
 }
 
@@ -87,7 +87,7 @@ int constant_definition() {
             getsym();
             check(integer())
         }
-        printf("<常量定义>\n");
+        //printf("<常量定义>\n");
         return 0;
     }
     if (equal(sym.content, "char")) {
@@ -133,7 +133,7 @@ int constant_definition() {
             print_word(sym);
             getsym();
         }
-        printf("<常量定义>\n");
+        //printf("<常量定义>\n");
         return 0;
     }
     return -1;
@@ -146,7 +146,7 @@ int integer() {
         getsym();
     }
     check(unsigned_integer())
-    printf("<整数>\n");
+    //printf("<整数>\n");
     return 0;
 }
 
@@ -158,7 +158,7 @@ int unsigned_integer() {
     print_word(sym);
     u_int = atoi(sym.content);
     getsym();
-    printf("<无符号整数>\n");
+    //printf("<无符号整数>\n");
     return u_int;
 }
 
@@ -193,7 +193,7 @@ int variable_specification() {
     if (cnt == 0) {
         return 0;
     }
-    printf("<变量说明>\n");
+    //printf("<变量说明>\n");
     return 0;
 }
 
@@ -244,7 +244,7 @@ int variable_definition() {
             getsym();
         }
     }
-    printf("<变量定义>\n");
+    //printf("<变量定义>\n");
     return 0;
 }
 
@@ -277,7 +277,7 @@ int return_func_definition() {
     }
     print_word(sym);
     getsym();
-    printf("<有返回值函数定义>\n");
+    //printf("<有返回值函数定义>\n");
     return 0;
 }
 
@@ -319,13 +319,13 @@ int declaration_header() {
         print_word(sym);
         getsym();
     }
-    printf("<声明头部>\n");
+    //printf("<声明头部>\n");
     return 0;
 }
 
 int parameter_table() {
     if (equal(sym.content, ")")) {
-        printf("<参数表>\n");
+        //printf("<参数表>\n");
         return 0;
     }
     if (!equal(sym.content, "int") && !equal(sym.content, "char")) {
@@ -356,7 +356,7 @@ int parameter_table() {
         print_word(sym);
         getsym();
     }
-    printf("<参数表>\n");
+    //printf("<参数表>\n");
     return 0;
 }
 
@@ -365,13 +365,13 @@ int compound_statement() {
     check(constant_specification())
     check(variable_specification())
     check(statement_column())
-    printf("<复合语句>\n");
+    //printf("<复合语句>\n");
     return 0;
 }
 
 int statement_column() {
     while (statement() >= 0);
-    printf("<语句列>\n");
+    //printf("<语句列>\n");
     return 0;
 }
 
@@ -410,7 +410,7 @@ int statement() {
         print_word(sym);
         getsym();
     }
-    printf("<语句>\n");
+    //printf("<语句>\n");
     return 0;
 }
 
@@ -440,7 +440,7 @@ int conditional_statement() {
         getsym();
         check(statement())
     }
-    printf("<条件语句>\n");
+    //printf("<条件语句>\n");
     return 0;
 }
 
@@ -452,7 +452,7 @@ int condition() {
         getsym();
         check(expression())
     }
-    printf("<条件>\n");
+    //printf("<条件>\n");
     return 0;
 }
 
@@ -468,7 +468,7 @@ int expression() {
         getsym();
         check(term())
     }
-    printf("<表达式>\n");
+    //printf("<表达式>\n");
     return 0;
 }
 
@@ -480,7 +480,7 @@ int term() {
         getsym();
         check(factor())
     }
-    printf("<项>\n");
+    //printf("<项>\n");
     return 0;
 }
 
@@ -523,7 +523,7 @@ int factor() {
         handle_error("no matched factor");
         return -1;
     }
-    printf("<因子>\n");
+    //printf("<因子>\n");
     return 0;
 }
 
@@ -553,10 +553,10 @@ int func_call_statement() {
     print_word(sym);
     getsym();
     if (find_return_func(func)) {
-        printf("<有返回值函数调用语句>\n");
+        //printf("<有返回值函数调用语句>\n");
     }
     else if (find_no_return_func(func)) {
-        printf("<无返回值函数调用语句>\n");
+        //printf("<无返回值函数调用语句>\n");
     }
     else {
         handle_error("no such func in func_call");
@@ -568,7 +568,7 @@ int func_call_statement() {
 int value_parameter_table() {
     int r;
     if (equal(sym.content, ")")) {
-        printf("<值参数表>\n");
+        //printf("<值参数表>\n");
         return 0;
     }
     check(expression())
@@ -577,7 +577,7 @@ int value_parameter_table() {
         getsym();
         check(expression())
     }
-    printf("<值参数表>\n");
+    //printf("<值参数表>\n");
     return 0;
 }
 
@@ -696,14 +696,14 @@ int loop_statement() {
     else {
         return -1;
     }
-    printf("<循环语句>\n");
+    //printf("<循环语句>\n");
     return 0;
 }
 
 int step() {
     int r;
     check(unsigned_integer())
-    printf("<步长>\n");
+    //printf("<步长>\n");
     return 0;
 }
 
@@ -732,7 +732,7 @@ int assignment_statement() {
     print_word(sym);
     getsym();
     check(expression())
-    printf("<赋值语句>\n");
+    //printf("<赋值语句>\n");
     return 0;
 }
 
@@ -770,7 +770,7 @@ int read_statement() {
     }
     print_word(sym);
     getsym();
-    printf("<读语句>\n");
+    //printf("<读语句>\n");
     return 0;
 }
 
@@ -805,7 +805,7 @@ int write_statement() {
     }
     print_word(sym);
     getsym();
-    printf("<写语句>\n");
+    //printf("<写语句>\n");
     return 0;
 }
 
@@ -815,7 +815,7 @@ int string() {
     }
     print_word(sym);
     getsym();
-    printf("<字符串>\n");
+    //printf("<字符串>\n");
     return 0;
 }
 
@@ -837,7 +837,7 @@ int return_statement() {
         print_word(sym);
         getsym();
     }
-    printf("<返回语句>\n");
+    //printf("<返回语句>\n");
     return 0;
 }
 
@@ -885,7 +885,7 @@ int no_return_func_definition() {
     }
     print_word(sym);
     getsym();
-    printf("<无返回值函数定义>\n");
+    //printf("<无返回值函数定义>\n");
     return 0;
 }
 
@@ -943,6 +943,6 @@ int main_func() {
         return -1;
     }
     print_word(sym);
-    printf("<主函数>\n");
+    //printf("<主函数>\n");
     return 0;
 }
