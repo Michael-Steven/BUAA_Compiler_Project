@@ -8,6 +8,12 @@ typedef struct Element {
     char content[1000];
 } Element;
 
+typedef struct func {
+    char content[1000];
+    int type; // 0:int; 1:char; 2:void;
+    int para_type[100]; // 0:int; 1:char;
+    int para_sum;
+}FUNC;
 
 static char mark[40][10] = {"IDENFR", "INTCON", "CHARCON", "STRCON", "CONSTTK", "INTTK", "CHARTK",
                             "VOIDTK", "MAINTK", "IFTK", "ELSETK", "DOTK", "WHILETK", "FORTK",
@@ -21,8 +27,8 @@ static int var1 = 0, var2 = 0, var3 = 0;
 static int line = 1;
 char c;         // used to getchar()
 char s[1000];   // temp var to save a string
-static char return_func[100][1000] = {};
-static char no_return_func[100][1000] = {};
+FUNC return_func[100];
+FUNC no_return_func[100];
 static int return_func_index = 0;
 static int no_return_func_index = 0;
 

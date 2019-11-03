@@ -127,7 +127,7 @@ int gettoken() {
         strcpy(sym.content, "}");
         c = getchar();
     }
-    else if (isalpha(c) || c == '_') {
+    else {// if (isalnum(c) || c == '_') {
         return handle_IDENFR();
     }
     return 0;
@@ -138,7 +138,12 @@ void print_word(Element single_word) {
 }
 
 void handle_error(char err[], char type) {
-    printf("%d %c\n", line, type);
+    if (type == 'k') {
+        printf("%d %c\n", line - 1, type);
+    }
+    else {
+        printf("%d %c\n", line, type);
+    }
     //printf("%s\n", err);
 }
 
@@ -217,12 +222,12 @@ int handle_IDENFR() {
         strcpy(sym.content, "return");
     }
     else {
-        int i, isnum = 1, isidentifier = 1;
-        for (i = 0; i < strlen(s); i++) {
-            if (!(i == 0 && (isalpha(s[i]) || s[i] == '_')) || !(i > 0 && (isalnum(s[i]) || s[i] == '_'))) {
+        int j, isnum = 1, isidentifier = 1;
+        for (j = 0; j < strlen(s); j++) {
+            if ((j == 0 && !(isalpha(s[j]) || s[j] == '_')) || (j > 0 && !(isalnum(s[j]) || s[j] == '_'))) {
                 isidentifier = 0;
             }
-            if (!(i == 0 && isnumber(s[i])) || !(i > 0 && isnumber(s[i]) && s[0] != '0')) {
+            if ((j == 0 && !(s[j] >= '0' && s[j] <= '9')) || (j > 0 && !(s[j] >= '0' && s[j] <= '9' && s[0] != '0'))) {
                 isnum = 0;
             }
         }
@@ -238,7 +243,16 @@ int handle_IDENFR() {
             strcpy(sym.content, s);
         }
         else {
-
+            sym.type = 0;
+            strcpy(sym.content, s);
+            handle_error("identifier has some other characters", 'a');
+//            for (i = 0; i < strlen(s); i++) {
+//                if (search(s[i])) {
+//                    strcpy(tmp, &s[i + 1]);
+//                    strcat(&s[i], tmp);
+//                    i--;
+//                }
+//            }
         }
     }
     return 0;
