@@ -1,8 +1,10 @@
 #ifndef GENERATE_GRAMMAR_H
 #define GENERATE_GRAMMAR_H
 
-typedef struct parser {
+typedef struct {
     int ret;
+    int c_len;
+    //int kind; //0:int; 1:char;
     char content[6][100];
 } Parser;
 

@@ -6,6 +6,11 @@
 #include "error.h"
 #include "file.h"
 
+extern Element sym;
+extern const char mark[40][10];
+char c;         // used to getchar()
+char s[1000];   // temp var to save a string
+
 int test_word() {
 //    freopen("testfile.txt", "r", stdin);
 //    freopen("output.txt", "w", stdout);
@@ -139,7 +144,9 @@ int gettoken() {
 }
 
 void print_word(Element single_word) {
+#ifdef PARSER_OUT
     fprintf(parser_out, "%s %s\n", mark[single_word.type], single_word.content);
+#endif
 }
 
 int handle_IDENFR() {

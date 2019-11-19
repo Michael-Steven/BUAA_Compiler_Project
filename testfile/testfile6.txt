@@ -3,13 +3,19 @@ const int ma = +1; const int k = 0;
 const int MA = 510;
 
 void main() {
-    int n;
-    scanf(n);
+    int n, a,b,c;
+    scanf(n,a,b,c);
     printf("!!!!\\    ");
     printf("!!!!*");
     printf("!!!!    ");
     printf("!!!!\\", ma);
-    n = n  *  n + 3 + 2 + -9 + 0 / 1;
-    printf(n);
+    c = n  *  n;
+    printf(c);
+    c = MAX;
+    printf(c);
+    c = MAX * MA;
+    printf(c);
+    scanf(c);
+    printf(c);
     printf("Hello, World!\n");
 }

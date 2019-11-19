@@ -1,0 +1,18 @@
+const int a0 = +1, b0 = -2, c0 = 1276543890, d0 = 0;
+const int e0 = 123;
+int a2, b2, c2[100], d2[9999];
+int _abcdefghijklmnopqrstuvwxyz;
+void main(){
+    int a;
+    int b, c;
+    int d, e, f, g, h, i;
+    scanf(a, b, c, d, e, f, g, h, i);
+    d = b + c / a;
+    e = a * b - c;
+    printf("begin");
+    printf("b + c / a = ", d);
+    printf("i = ", i);
+    printf(d + e + f);
+    printf("char : ", 'a');
+    printf("end");
+}

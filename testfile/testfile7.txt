@@ -1,0 +1,23 @@
+const int MAX = -100, MAXN = +111;
+const int ma = +1; const int k = 0;
+const int MA = 510;
+const char xx = 'c', s = 'x';
+const char xxx = '*'; const char xxxx = '/';
+const char xxxxxx = '+';
+const char sss = '3';
+
+void main() {
+    int n;
+    char aa;
+    char xx;
+    n = ma;
+    printf(n);
+    scanf(n);
+    printf("!!!!\\    ");
+    printf("!!!!*");
+    printf("!!!!    ");
+    printf("!!!!\\", MAX);
+    n = n  *  n + 2 * 'k' + sss + 3 * (1 + (-2)) + (2 + (-9)) + 0 / 1;
+    printf(n);
+    printf("Hello, World!\n");
+}

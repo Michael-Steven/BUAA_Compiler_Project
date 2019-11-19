@@ -1,10 +1,27 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "word.h"
+#include "middle_code.h"
 #include "parser.h"
 #include "error.h"
 #include "file.h"
+
+Element sym;    // "getsym()" save a word struct in sym
+Element pre_read1, pre_read2;
+int var1 = 0, var2 = 0;
+int reg_cnt = 0;
+char return_func[100][1000] = {};
+char no_return_func[100][1000] = {};
+int return_func_index = 0;
+int no_return_func_index = 0;
+const char mark[40][10] = {"IDENFR", "INTCON", "CHARCON", "STRCON", "CONSTTK", "INTTK", "CHARTK",
+                           "VOIDTK", "MAINTK", "IFTK", "ELSETK", "DOTK", "WHILETK", "FORTK",
+                           "SCANFTK", "PRINTFTK", "RETURNTK", "PLUS", "MINU", "MULT", "DIV",
+                           "LSS", "LEQ", "GRE", "GEQ", "EQL", "NEQ", "ASSIGN", "SEMICN",
+                           "COMMA", "LPARENT", "RPARENT", "LBRACK", "RBRACK", "LBRACE", "RBRACE"};
+extern Middle_code m_list[10000];
+extern int m_list_len;
+extern int main_location;
 
 int parse() {
     if (program().ret < 0) {
@@ -15,7 +32,9 @@ int parse() {
 }
 
 void parser_print(char *string) {
+#ifdef PARSER_OUT
     fprintf(parser_out, "%s", string);
+#endif
 }
 
 Parser program() {
@@ -56,6 +75,7 @@ Parser constant_specification() {
 
 Parser constant_definition() {
     Parser r;
+    char identifier[100];
     if (equal(sym.content, "int")) {
         print_word(sym);
         getsym();
@@ -63,6 +83,7 @@ Parser constant_definition() {
             handle_error("wrong identifier!");
             return negative;
         }
+        strcpy(identifier, sym.content);
         print_word(sym);
         getsym();
         if (!equal(sym.content, "=")) {
@@ -72,6 +93,8 @@ Parser constant_definition() {
         print_word(sym);
         getsym();
         check(integer())
+        m_list[m_list_len++] = middle_code_create(
+                CONSTANT_SPECIFICATION, 5, "const", "int", identifier, "=", r.content[0]);
         while (equal(sym.content, ",")) {
             print_word(sym);
             getsym();
@@ -79,6 +102,7 @@ Parser constant_definition() {
                 handle_error("wrong identifier!");
                 return negative;
             }
+            strcpy(identifier, sym.content);
             print_word(sym);
             getsym();
             if (!equal(sym.content, "=")) {
@@ -88,6 +112,8 @@ Parser constant_definition() {
             print_word(sym);
             getsym();
             check(integer())
+            m_list[m_list_len++] = middle_code_create(
+                    CONSTANT_SPECIFICATION, 5, "const", "int", identifier, "=", r.content[0]);
         }
         parser_print("<常量定义>\n");
         return zero;
@@ -99,6 +125,7 @@ Parser constant_definition() {
             handle_error("wrong identifier!");
             return negative;
         }
+        strcpy(identifier, sym.content);
         print_word(sym);
         getsym();
         if (!equal(sym.content, "=")) {
@@ -111,6 +138,8 @@ Parser constant_definition() {
             handle_error("wrong character");
             return negative;
         }
+        m_list[m_list_len++] = middle_code_create(
+                CONSTANT_SPECIFICATION, 5, "const", "char", identifier, "=", sym.content);
         print_word(sym);
         getsym();
         while (equal(sym.content, ",")) {
@@ -120,6 +149,7 @@ Parser constant_definition() {
                 handle_error("wrong identifier!");
                 return negative;
             }
+            strcpy(identifier, sym.content);
             print_word(sym);
             getsym();
             if (!equal(sym.content, "=")) {
@@ -132,6 +162,8 @@ Parser constant_definition() {
                 handle_error("wrong character");
                 return negative;
             }
+            m_list[m_list_len++] = middle_code_create(
+                    CONSTANT_SPECIFICATION, 5, "const", "char", identifier, "=", sym.content);
             print_word(sym);
             getsym();
         }
@@ -142,26 +174,28 @@ Parser constant_definition() {
 }
 
 Parser integer() {
-    Parser r;
+    Parser r, ret = {0, 1};
     if ((equal(sym.content, "+") || equal(sym.content, "-")) && sym.type != 2) {
+        strcpy(ret.content[0], sym.content);
         print_word(sym);
         getsym();
     }
     check(unsigned_integer())
+    strcat(ret.content[0], r.content[0]);
     parser_print("<整数>\n");
-    return zero;
+    return ret;
 }
 
 Parser unsigned_integer() {
-    Parser u_int;
+    Parser ret = {0, 0};
     if (!equal(mark[sym.type], "INTCON")) {
         return negative;
     }
+    strcpy(ret.content[ret.c_len++], sym.content);
     print_word(sym);
-    u_int.ret = atoi(sym.content);
     getsym();
     parser_print("<无符号整数>\n");
-    return u_int;
+    return ret;
 }
 
 Parser variable_specification() {
@@ -201,18 +235,21 @@ Parser variable_specification() {
 }
 
 Parser variable_definition() {
+    char type[10], identifier[100];
+    strcpy(type, pre_read1.content);
     print_word(pre_read1);
     var1 = 0;
     if (!equal(mark[pre_read2.type], "IDENFR")) {
         handle_error("wrong identifier!");
         return negative;
     }
+    strcpy(identifier, pre_read2.content);
     print_word(pre_read2);
     var2 = 0;
     if (equal(sym.content, "[")) {
         print_word(sym);
         getsym();
-        if (unsigned_integer().ret == 0) {
+        if (equal(unsigned_integer().content[0], "0")) {
             handle_error("number of array is 0");
             return negative;
         }
@@ -223,6 +260,9 @@ Parser variable_definition() {
         print_word(sym);
         getsym();
     }
+    else {
+        m_list[m_list_len++] = middle_code_create(VARIABLE_SPECIFICATION, 3, "var", type, identifier);
+    }
     while (equal(sym.content, ",")) {
         print_word(sym);
         getsym();
@@ -230,12 +270,13 @@ Parser variable_definition() {
             handle_error("wrong identifier!");
             return negative;
         }
+        strcpy(identifier, sym.content);
         print_word(sym);
         getsym();
         if (equal(sym.content, "[")) {
             print_word(sym);
             getsym();
-            if (unsigned_integer().ret == 0) {
+            if (equal(unsigned_integer().content[0], "0")) {
                 handle_error("number of array is 0");
                 return negative;
             }
@@ -245,6 +286,9 @@ Parser variable_definition() {
             }
             print_word(sym);
             getsym();
+        }
+        else {
+            m_list[m_list_len++] = middle_code_create(VARIABLE_SPECIFICATION, 3, "var", type, identifier);
         }
     }
     parser_print("<变量定义>\n");
@@ -460,37 +504,67 @@ Parser condition() {
 }
 
 Parser expression() {
-    Parser r;
+    Parser r, ret = {0, 1};
+    int flag = 0;
+    char f1[100], f2[100], op[10], out[100];
     if ((equal(sym.content, "+") || equal(sym.content, "-")) && sym.type != 2) {
+        strcpy(op, sym.content);
+        flag = 1;
         print_word(sym);
         getsym();
     }
     check(term())
+    if (flag == 0) {
+        strcpy(f1, r.content[0]);
+    }
+    else {
+        strcpy(f2, r.content[0]);
+        sprintf(out, "s%d", reg_cnt++);
+        m_list[m_list_len++] = middle_code_create(CALCULATE, 5, out, "=", "0", op, f2);
+        strcpy(f1, out);
+    }
     while ((equal(sym.content, "+") || equal(sym.content, "-")) && sym.type != 2) {
+        ret.ret = 1;
+        strcpy(op, sym.content);
         print_word(sym);
         getsym();
         check(term())
+        strcpy(f2, r.content[0]);
+        sprintf(out, "s%d", reg_cnt++);
+        m_list[m_list_len++] = middle_code_create(CALCULATE, 5, out, "=", f1, op, f2);
+        strcpy(f1, out);
     }
+    strcpy(ret.content[0], f1);
     parser_print("<表达式>\n");
-    return zero;
+    return ret;
 }
 
 Parser term() {
-    Parser r;
+    Parser r, ret = {0, 1};
+    char f1[100], f2[100], op[10], out[100];
     check(factor())
+    strcpy(f1, r.content[0]);
     while ((equal(sym.content, "*") || equal(sym.content, "/")) && sym.type != 2) {
+        strcpy(op, sym.content);
         print_word(sym);
         getsym();
         check(factor())
+        strcpy(f2, r.content[0]);
+        sprintf(out, "s%d", reg_cnt++);
+        m_list[m_list_len++] = middle_code_create(CALCULATE, 5, out, "=", f1, op, f2);
+        strcpy(f1, out);
     }
+    strcpy(ret.content[0], f1);
     parser_print("<项>\n");
-    return zero;
+    return ret;
 }
 
 Parser factor() {
-    Parser r;
+    Parser r, ret = {0, 1, 1};
+    char identifier[100], char_con[10];
     if (func_call_statement().ret >= 0) {}
     else if (equal(mark[sym.type], "IDENFR")) {
+        strcpy(identifier, sym.content);
         print_word(sym);
         getsym();
         if (equal(sym.content, "[")) {
@@ -504,6 +578,9 @@ Parser factor() {
             print_word(sym);
             getsym();
         }
+        else {
+            strcpy(ret.content[0], identifier);
+        }
     }
     else if (equal(sym.content, "(")) {
         print_word(sym);
@@ -513,11 +590,16 @@ Parser factor() {
             handle_error("no ')' after ')'");
             return negative;
         }
+        strcpy(ret.content[0], r.content[0]);
         print_word(sym);
         getsym();
     }
-    else if (integer().ret >= 0) {}
+    else if ((r = integer()).ret >= 0) {
+        strcpy(ret.content[0], r.content[0]);
+    }
     else if (equal(mark[sym.type], "CHARCON")) {
+        sprintf(char_con, "\'%s\'", sym.content);
+        strcpy(ret.content[0], char_con);
         print_word(sym);
         getsym();
     }
@@ -527,7 +609,7 @@ Parser factor() {
         return negative;
     }
     parser_print("<因子>\n");
-    return zero;
+    return ret;
 }
 
 Parser func_call_statement() {
@@ -712,9 +794,11 @@ Parser step() {
 
 Parser assignment_statement() {
     Parser r;
+    char identifier[100], f1[100];
     if (!equal(mark[sym.type], "IDENFR")) {
         return negative;
     }
+    strcpy(identifier, sym.content);
     print_word(sym);
     getsym();
     if (equal(sym.content, "[")) {
@@ -735,6 +819,13 @@ Parser assignment_statement() {
     print_word(sym);
     getsym();
     check(expression())
+    strcpy(f1, r.content[0]);
+    if (r.ret == 1) {
+        strcpy(m_list[m_list_len - 1].code[0], identifier);
+    }
+    else {
+        m_list[m_list_len++] = middle_code_create(ASSIGNMENT_STATEMENT, 3, identifier, "=", f1);
+    }
     parser_print("<赋值语句>\n");
     return zero;
 }
@@ -755,6 +846,7 @@ Parser read_statement() {
         handle_error("wrong identifier!");
         return negative;
     }
+    m_list[m_list_len++] = middle_code_create(READ_STATEMENT, 2, "read", sym.content);
     print_word(sym);
     getsym();
     while (equal(sym.content, ",")) {
@@ -764,6 +856,7 @@ Parser read_statement() {
             handle_error("wrong identifier!");
             return negative;
         }
+        m_list[m_list_len++] = middle_code_create(READ_STATEMENT, 2, "read", sym.content);
         print_word(sym);
         getsym();
     }
@@ -779,6 +872,7 @@ Parser read_statement() {
 
 Parser write_statement() {
     Parser r;
+    char str[1000];
     if (!equal(sym.content, "printf")) {
         return negative;
     }
@@ -790,17 +884,28 @@ Parser write_statement() {
     }
     print_word(sym);
     getsym();
-    if (string().ret >= 0) {
+    r = string();
+    strcpy(str, r.content[0]);
+    if (r.ret >= 0) {
         if (equal(sym.content, ",")) {
             print_word(sym);
             getsym();
             check(expression())
+            m_list[m_list_len++] = middle_code_create(WRITE_STATEMENT_1, 3, "write", str, r.content[0]);
+        }
+        else {
+            m_list[m_list_len++] = middle_code_create(WRITE_STATEMENT_2, 2, "write", str);
         }
     }
-    else if (expression().ret >= 0) {}
     else {
-        handle_error("printf content error");
-        return negative;
+        r = expression();
+        if (r.ret >= 0) {
+            m_list[m_list_len++] = middle_code_create(WRITE_STATEMENT_3, 2, "write", r.content[0]);
+        }
+        else {
+            handle_error("printf content error");
+            return negative;
+        }
     }
     if (!equal(sym.content, ")")) {
         handle_error("no ')' after '(' in printf");
@@ -813,13 +918,15 @@ Parser write_statement() {
 }
 
 Parser string() {
+    Parser ret = {0, 1};
     if (!equal(mark[sym.type], "STRCON")) {
         return negative;
     }
+    strcpy(ret.content[0], sym.content);
     print_word(sym);
     getsym();
     parser_print("<字符串>\n");
-    return zero;
+    return ret;
 }
 
 Parser return_statement() {
@@ -920,6 +1027,8 @@ Parser main_func() {
         handle_error("no 'main' in main_func");
         return negative;
     }
+    main_location = m_list_len;
+    m_list[m_list_len++] = middle_code_create(MAIN_FUNC, 2, "void", "main");
     print_word(sym);
     getsym();
     if (!equal(sym.content, "(")) {
@@ -947,5 +1056,6 @@ Parser main_func() {
     }
     print_word(sym);
     parser_print("<主函数>\n");
+    //m_list[m_list_len++] = middle_code_create(LABLE, 1, "end_main:");
     return zero;
 }

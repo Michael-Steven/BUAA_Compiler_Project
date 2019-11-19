@@ -2,5 +2,7 @@
 #include "file.h"
 
 void handle_error(char err[]) {
-    fprintf(error, "%s\n", err);
+#ifdef ERROR_OUT
+    fprintf(error_out, "%s\n", err);
+#endif
 }

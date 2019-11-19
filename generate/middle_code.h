@@ -1,13 +1,12 @@
 #ifndef GENERATE_MIDDLE_CODE_H
 #define GENERATE_MIDDLE_CODE_H
 
-typedef struct middle_code {
+typedef struct {
     int type;
+    int c_len;
+    int kind; // 0:int; 1:char;
     char code[6][100];
-} middle_code;
-
-middle_code m_list[10000];
-static int m_list_len = 0;
+} Middle_code;
 
 #define DECLARATION_HEADER          1  //函数声明头部
 #define PARAMETER                   2  //函数参数
@@ -20,6 +19,16 @@ static int m_list_len = 0;
 #define ASSIGNMENT_STATEMENT        9  //赋值语句
 #define CONDITION                   10 //条件判断
 #define JUMP_STATEMENT              11 //跳转语句
-#define CALCULATE                   12 //计算语句
+#define READ_STATEMENT              12 //scanf
+#define WRITE_STATEMENT_1           13 //printf(字符串， 表达式);
+#define WRITE_STATEMENT_2           14 //printf(字符串);
+#define WRITE_STATEMENT_3           15 //printf(表达式);
+#define CALCULATE                   16 //计算语句
+#define MAIN_FUNC                   17 //main函数
+#define LABLE                       18 //标签
+
+Middle_code middle_code_create(int type, int num, ...);
+
+void middle_code_print();
 
 #endif //GENERATE_MIDDLE_CODE_H
