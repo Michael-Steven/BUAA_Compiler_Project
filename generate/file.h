@@ -4,7 +4,7 @@
 //#define PARSER_OUT
 #define MIDDLE_CODE_OUT
 #define MIPS_CODE_OUT
-//#define ERROR_OUT
+#define ERROR_OUT
 
 #include <stdio.h>
 

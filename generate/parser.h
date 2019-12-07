@@ -4,11 +4,19 @@
 typedef struct {
     int ret;
     int c_len;
-    //int kind; //0:int; 1:char;
+    int kind; //0:int; 1:char;
     char content[6][100];
 } Parser;
 
 static Parser zero = {0}, negative = {-1};
+
+typedef struct {
+    char name[100];
+    int kind; //0:int; 1:char;
+    int usage; //0:name; 1:replace;
+    char replace[100];
+    int replace_kind; //0:int; 1:char;
+} Var_list;
 
 int parse();
 
@@ -19,6 +27,8 @@ Parser program();
 Parser constant_specification();
 
 Parser constant_definition();
+
+int find_var(char *name);
 
 Parser integer();
 

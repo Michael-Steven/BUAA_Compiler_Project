@@ -9,8 +9,8 @@
 extern char c;
 
 int main() {
-    //system("rm parser_out.txt middle_code.txt mips.txt error.txt");
-    freopen("testfile.txt", "r", stdin);
+    system("rm parser_out.txt middle_code.txt mips.txt error.txt");
+    freopen("testfile4.txt", "r", stdin);
 #ifdef PARSER_OUT
     parser_out = fopen("parser_out.txt", "w");
 #endif
@@ -28,7 +28,6 @@ int main() {
     parse();
     middle_code_print();
     generate_mips();
-//    middle_code_print();
     fclose(stdin);
 #ifdef PARSER_OUT
     fclose(parser_out);

@@ -264,6 +264,9 @@ int handle_STRCON() {
             break;
         }
         s[i++] = c;
+        if (c == '\\') {
+            s[i++] = '\\';
+        }
     }
     s[i] = '\0';
     sym.type = 3;
