@@ -10,7 +10,7 @@ extern char c;
 
 int main() {
     system("rm parser_out.txt middle_code.txt mips.txt error.txt");
-    freopen("testfile4.txt", "r", stdin);
+    freopen("testfile.txt", "r", stdin);
 #ifdef PARSER_OUT
     parser_out = fopen("parser_out.txt", "w");
 #endif

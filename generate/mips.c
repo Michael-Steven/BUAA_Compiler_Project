@@ -13,6 +13,7 @@ extern int main_location;
 int usage[35]; //寄存器是否被使用 0: 否; 1: 是
 //static int var_stack_base = 0x7ff00000;
 //static int var_stack_point = 0;
+static int var_base_point = 0x7ff00000;
 static int var_stack_point = 0x7ff00000;
 Store store_list[10000];
 static int store_len = 0;
@@ -52,28 +53,28 @@ int is_space_t() {
 }
 
 void flush_register(int location) {
-    int i, j, k, reg, flag;
-    for (i = 0; i < store_len; i++) {
-        reg = store_list[i].reg;
-        if (reg >= 0) {
-            flag = 0;
-            for (j = location + 1; j < m_list_len; j++) {
-                for (k = 0; k < m_list[j].c_len; k++) {
-                    if (equal(m_list[j].code[k], store_list[i].var)) {
-                        flag = 1;
-                        break;
-                    }
-                }
-                if (flag == 1) {
-                    break;
-                }
-            }
-            if (flag == 0) {
-                store_list[i].reg = -2;
-                usage[reg] = 0;
-            }
-        }
-    }
+//    int i, j, k, reg, flag;
+//    for (i = 0; i < store_len; i++) {
+//        reg = store_list[i].reg;
+//        if (reg >= 0) {
+//            flag = 0;
+//            for (j = location + 1; j < m_list_len; j++) {
+//                for (k = 0; k < m_list[j].c_len; k++) {
+//                    if (equal(m_list[j].code[k], store_list[i].var)) {
+//                        flag = 1;
+//                        break;
+//                    }
+//                }
+//                if (flag == 1) {
+//                    break;
+//                }
+//            }
+//            if (flag == 0) {
+//                store_list[i].reg = -2;
+//                usage[reg] = 0;
+//            }
+//        }
+//    }
 }
 
 void add_var(char *var, char *value_reg, int type) {
@@ -86,7 +87,7 @@ void add_var(char *var, char *value_reg, int type) {
             mips_code_print(out);
         }
         else {
-            sprintf(out, "sw %s, 0x%x", value_reg, l);
+            sprintf(out, "sw %s, %d($gp)", value_reg, l - var_base_point);
             mips_code_print(out);
         }
     }
@@ -118,7 +119,7 @@ void add_var(char *var, char *value_reg, int type) {
             var_stack_point -= 4;
             store_list[store_len].stack_location = var_stack_point;
             store_len++;
-            sprintf(out, "sw %s, 0x%x", value_reg, var_stack_point);
+            sprintf(out, "sw %s, %d($gp)", value_reg, var_stack_point - var_base_point);
             mips_code_print(out);
         }
     }
@@ -161,6 +162,7 @@ void generate_mips() {
     deep--;
     mips_code_print("\n.text");
     deep++;
+    mips_code_print("li $gp, 0x7ff00000");
     mips_code_print("main:");
     deep++;
     for (i = 0; m_list[i].type != FUNCTION_CALL; i++) {
@@ -315,7 +317,7 @@ int generate_array(char *var, char *cal, char *write_reg, int mode) { // 0:value
                 strcpy(cal, regs[l]);
             }
             else {
-                sprintf(out, "lw %s, 0x%x", write_reg, l);
+                sprintf(out, "lw %s, %d($gp)", write_reg, l - var_base_point);
                 mips_code_print(out);
                 strcpy(cal, write_reg);
             }
@@ -342,11 +344,11 @@ void generate_read_statement(int location) {
         mips_code_print(out);
     }
     else if (l >= REG_SUM) {
-        sprintf(out, "sw $v0, 0x%x", l);
+        sprintf(out, "sw $v0, %d($gp)", l - var_base_point);
         mips_code_print(out);
     }
     else {
-        //flush_register(location);
+        flush_register(location);
         add_var(m_list[location].code[1], "$v0", m_list[location].kind);
     }
 }
@@ -391,7 +393,7 @@ void generate_write_statement_1(int location) {
                     sprintf(out, "move $a0, %s", regs[l]);
                 }
                 else {
-                    sprintf(out, "lw $a0, 0x%x", l);
+                    sprintf(out, "lw $a0, %d($gp)", l - var_base_point);
                 }
             }
         }
@@ -447,7 +449,7 @@ void generate_write_statement_3(int location) {
                     sprintf(out, "move $a0, %s", regs[l]);
                 }
                 else {
-                    sprintf(out, "lw $a0, 0x%x", l);
+                    sprintf(out, "lw $a0, %d($gp)", l - var_base_point);
                 }
             }
         }
@@ -483,13 +485,13 @@ void generate_calculate_statement(int location) {
         else if (write_location >= REG_SUM) {
             sprintf(out, "add $t0, %s, %s", cal_1, cal_2);
             mips_code_print(out);
-            sprintf(out, "sw $t0, 0x%x", write_location);
+            sprintf(out, "sw $t0, %d($gp)", write_location - var_base_point);
             mips_code_print(out);
         }
         else {
             sprintf(out, "add $t0, %s, %s", cal_1, cal_2);
             mips_code_print(out);
-            //flush_register(location);
+            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
         }
     }
@@ -506,13 +508,13 @@ void generate_calculate_statement(int location) {
         else if (write_location >= REG_SUM) {
             sprintf(out, "sub $t0, %s, %s", cal_1, cal_2);
             mips_code_print(out);
-            sprintf(out, "sw $t0, 0x%x", write_location);
+            sprintf(out, "sw $t0, %d($gp)", write_location - var_base_point);
             mips_code_print(out);
         }
         else {
             sprintf(out, "sub $t0, %s, %s", cal_1, cal_2);
             mips_code_print(out);
-            //flush_register(location);
+            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
         }
     }
@@ -529,12 +531,12 @@ void generate_calculate_statement(int location) {
         }
         else if (write_location >= REG_SUM) {
             mips_code_print("mflo $t0");
-            sprintf(out, "sw $t0, 0x%x", write_location);
+            sprintf(out, "sw $t0, %d($gp)", write_location - var_base_point);
             mips_code_print(out);
         }
         else {
             mips_code_print("mflo $t0");
-            //flush_register(location);
+            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
         }
     }
@@ -551,12 +553,12 @@ void generate_calculate_statement(int location) {
         }
         else if (write_location >= REG_SUM) {
             mips_code_print("mflo $t0");
-            sprintf(out, "sw $t0, 0x%x", write_location);
+            sprintf(out, "sw $t0, %d($gp)", write_location - var_base_point);
             mips_code_print(out);
         }
         else {
             mips_code_print("mflo $t0");
-            //flush_register(location);
+            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
         }
     }
@@ -593,7 +595,7 @@ void generate_calculate_operand(int location, int num, char *cal, char *write_re
             strcpy(cal, regs[l]);
         }
         else {
-            sprintf(out, "lw %s, 0x%x", write_reg, l);
+            sprintf(out, "lw %s, %d($gp)", write_reg, l - var_base_point);
             mips_code_print(out);
             strcpy(cal, write_reg);
         }
@@ -629,11 +631,11 @@ void generate_assignment_statement(int location) {
     }
     else if (write_location >= REG_SUM) {
 //        store_list[write_location].type = m_list[location].kind;
-        sprintf(out, "sw %s, 0x%x", cal_1, write_location);
+        sprintf(out, "sw %s, %d($gp)", cal_1, write_location - var_base_point);
         mips_code_print(out);
     }
     else {
-        //flush_register(location);
+        flush_register(location);
         add_var(m_list[location].code[0], cal_1, m_list[location].kind);
     }
 }
@@ -772,22 +774,24 @@ void save_recursion_var(int prev_point, int now_point) {
     int i, var_reg;
     char out[100];
     for (i = now_point - 1; i >= prev_point; i--) {
-        mips_code_print("addi $sp, $sp, -4");
 //        stack_point -= 4;
         var_reg = store_list[i].reg;
         if (var_reg >= 0) {
+            mips_code_print("addi $sp, $sp, -4");
             sprintf(out, "sw %s, 0($sp)", regs[var_reg]);
             mips_code_print(out);
         }
-        else {
-            sprintf(out, "lw $t0, 0x%x", store_list[i].stack_location);
+        else if (var_reg == -1) {
+            mips_code_print("addi $sp, $sp, -4");
+            sprintf(out, "lw $t0, %d($gp)", store_list[i].stack_location - var_base_point);
             mips_code_print(out);
             mips_code_print("sw $t0, 0($sp)");
         }
     }
     roll_back_len = 0;
     for (i = prev_point; i < now_point; i++) {
-        roll_back_list[roll_back_len++] = store_list[i];
+        if (store_list[i].reg >= -1)
+            roll_back_list[roll_back_len++] = store_list[i];
     }
 }
 
@@ -855,14 +859,14 @@ void generate_param(int location) {
     for (i = location; m_list[i].type == PARAMETER; i++) {
         if (cnt < 4) {
             sprintf(read_reg, "$a%d", cnt);
-            //flush_register(i);
+            flush_register(i);
             add_var(m_list[i].code[2], read_reg, m_list[i].kind);
         }
         else {
             mips_code_print("lw $t0, 0($sp)");
             mips_code_print("addi $sp, $sp, 4");
             mips_code_print(out);
-            //flush_register(i);
+            flush_register(i);
             add_var(m_list[i].code[2], "$t0", m_list[i].kind);
         }
         cnt++;
