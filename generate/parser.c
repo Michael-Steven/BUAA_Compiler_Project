@@ -816,23 +816,23 @@ Parser func_call_statement() {
 Parser value_parameter_table() {
     Parser r;
     char list[100][100];
-    int list_index = 0, i;
+    int list_index = 0, i, kind[100];
     if (equal(sym.content, ")")) {
         parser_print("<值参数表>\n");
         return zero;
     }
     check(expression())
-//    m_list[m_list_len++] = middle_code_create(FUNCTION_CALL_PARAMETER, 0, 2, "push", r.content[0]);
+    kind[list_index] = r.kind;
     strcpy(list[list_index++], r.content[0]);
     while (equal(sym.content, ",")) {
         print_word(sym);
         getsym();
         check(expression())
-//        m_list[m_list_len++] = middle_code_create(FUNCTION_CALL_PARAMETER, 0, 2, "push", r.content[0]);
+        kind[list_index] = r.kind;
         strcpy(list[list_index++], r.content[0]);
     }
     for (i = 0; i < list_index; i++) {
-        m_list[m_list_len++] = middle_code_create(FUNCTION_CALL_PARAMETER, 0, 2, "push", list[i]);
+        m_list[m_list_len++] = middle_code_create(FUNCTION_CALL_PARAMETER, kind[i], 2, "push", list[i]);
     }
     parser_print("<值参数表>\n");
     return zero;
@@ -1242,7 +1242,6 @@ Parser no_return_func_definition() {
     Parser r;
     int i;
     char out[100];
-//    roll_back_index = var_list_index;
     if (!equal(sym.content, "void")) {
         handle_error("no 'void' in no_return_func_definition");
         return negative;
@@ -1288,11 +1287,12 @@ Parser no_return_func_definition() {
     }
     print_word(sym);
     getsym();
-    m_list[m_list_len++] = middle_code_create(RETURN_STATEMENT, 0, 1, "ret");
+    if (m_list[m_list_len - 1].type != RETURN_STATEMENT) {
+        m_list[m_list_len++] = middle_code_create(RETURN_STATEMENT, 0, 1, "ret");
+    }
     for (i = 0; i < var_list_index; i++) {
         var_list[i].usage = 0;
     }
-//    var_list_index = roll_back_index;
     parser_print("<无返回值函数定义>\n");
     return zero;
 }

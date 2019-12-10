@@ -46,7 +46,7 @@ void middle_code_print() {
 
 void middle_code_optimize() {
 //    clear();
-//    inline_optimize();
+    inline_optimize();
 }
 
 void clear() {
@@ -101,7 +101,7 @@ void clear() {
 }
 
 void inline_optimize() {
-    int i, j, k, l, head, tail;
+    int i, j, k, head, tail;
     for (i = 0; i < main_location; i++) {
         if (m_list[i].type == DECLARATION_HEADER) {
             inline_list_create(i);
@@ -118,7 +118,8 @@ void inline_optimize() {
                     head = i;
                     tail = i;
                     while (m_list[head - 1].type == FUNCTION_CALL_PARAMETER) head--;
-                    while (m_list[tail].type != ASSIGNMENT_STATEMENT) tail++;
+                    if (m_list[tail + 1].type == ASSIGNMENT_STATEMENT && equal(m_list[tail + 1].code[2], "RET"))
+                        tail++;
                     for (k = head; k <= tail; k++) {
                         if (m_list[k].type == FUNCTION_CALL_PARAMETER) {
                             m_list[k] = middle_code_create(ASSIGNMENT_STATEMENT, m_list[k].kind, 3,
@@ -166,7 +167,7 @@ int inline_list_create(int location) {
 }
 
 void inline_code_insert(int n, int location, int *end) {
-    int i, j, k, flag;
+    int i, j;
     Middle_code temp;
     for (i = location; i < m_list_len - 1; i++) {
         m_list[i] = m_list[i + 1];

@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include "word.h"
 #include "parser.h"
 #include "file.h"
@@ -9,7 +8,7 @@
 extern char c;
 
 int main() {
-//    freopen("30.in", "r", stdin);
+//    freopen("5.in", "r", stdin);
     freopen("testfile.txt", "r", stdin);
 #ifdef PARSER_OUT
     parser_out = fopen("parser_out.txt", "w");
