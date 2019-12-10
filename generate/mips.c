@@ -10,16 +10,14 @@
 extern Middle_code m_list[10000];
 extern int m_list_len;
 extern int main_location;
+static int global_end;
 int usage[35]; //寄存器是否被使用 0: 否; 1: 是
-//static int var_stack_base = 0x7ff00000;
-//static int var_stack_point = 0;
 static int var_base_point = 0x7ff00000;
 static int var_stack_point = 0x7ff00000;
 Store store_list[10000];
 static int store_len = 0;
 Store roll_back_list[1000];
 static int roll_back_len;
-//static int stack_point = 0x7fffeffc;
 static int lable_cnt = 0;
 static int deep = 0;
 static int dfs_deep = 0;
@@ -53,28 +51,52 @@ int is_space_t() {
 }
 
 void flush_register(int location) {
-//    int i, j, k, reg, flag;
-//    for (i = 0; i < store_len; i++) {
-//        reg = store_list[i].reg;
-//        if (reg >= 0) {
-//            flag = 0;
-//            for (j = location + 1; j < m_list_len; j++) {
-//                for (k = 0; k < m_list[j].c_len; k++) {
-//                    if (equal(m_list[j].code[k], store_list[i].var)) {
-//                        flag = 1;
-//                        break;
-//                    }
-//                }
-//                if (flag == 1) {
-//                    break;
-//                }
-//            }
-//            if (flag == 0) {
-//                store_list[i].reg = -2;
-//                usage[reg] = 0;
-//            }
-//        }
-//    }
+/*
+    int i, j, k, l, reg, flag, n, flag2;
+    char temp[100];
+    for (i = global_end + 1; i < store_len; i++) {
+        reg = store_list[i].reg;
+        if (reg >= 0) {
+            flag = 0;
+            for (j = location + 1; j < m_list_len; j++) {
+                for (k = 0; k < m_list[j].c_len; k++) {
+                    if (equal(m_list[j].code[k], store_list[i].var)) {
+                        flag = 1;
+                        break;
+                    }
+                    else {
+                        n = strlen(m_list[j].code[k]);
+                        if (n < strlen(store_list[i].var)) continue;
+                        flag2 = 0;
+                        for (l = 0; l < n; l++) {
+                            if (m_list[j].code[k][l] == '[') {
+                                strcpy(temp, &m_list[j].code[k][l + 1]);
+                                flag2 = 1;
+                                break;
+                            }
+                        }
+                        if (flag2 == 1) {
+                            n = strlen(temp);
+                            for (l = 0; l < n; l++) {
+                                if (temp[l] == ']') temp[l] = '\0';
+                            }
+                            if (equal(temp, store_list[i].var)) {
+                                flag = 1;
+                            }
+                        }
+                    }
+                }
+                if (flag == 1) {
+                    break;
+                }
+            }
+            if (flag == 0) {
+                store_list[i].reg = -2;
+                usage[reg] = 0;
+            }
+        }
+    }
+*/
 }
 
 void add_var(char *var, char *value_reg, int type) {
@@ -155,7 +177,7 @@ void mips_code_print(char *s) {
 
 void generate_mips() {
 #ifdef MIPS_CODE_OUT
-    int i;
+    int i, rs;
     mips_code_print(".data");
     deep++;
     init_string();
@@ -165,11 +187,31 @@ void generate_mips() {
     mips_code_print("li $gp, 0x7ff00000");
     mips_code_print("main:");
     deep++;
-    for (i = 0; m_list[i].type != FUNCTION_CALL; i++) {
+    for (i = 0; m_list[i].type != DECLARATION_HEADER && m_list[i].type != MAIN_FUNC; i++) {
         if (m_list[i].type == VARIABLE_SPECIFICATION && m_list[i].c_len == 4) {
             init_array(i);
         }
+        else if (m_list[i].type == VARIABLE_SPECIFICATION && m_list[i].c_len == 3) {
+            rs = is_space_s();
+            if (rs >= 0) {
+                strcpy(store_list[store_len].var, m_list[i].code[2]);
+                store_list[store_len].reg = rs;
+                store_list[store_len].type = m_list[i].kind;
+                store_len++;
+                usage[rs] = 1;
+            }
+            else {
+                strcpy(store_list[store_len].var, m_list[i].code[2]);
+                store_list[store_len].reg = -1;
+                store_list[store_len].type = m_list[i].kind;
+                var_stack_point -= 4;
+                store_list[store_len].stack_location = var_stack_point;
+                store_len++;
+            }
+        }
     }
+    global_end = store_len;
+    int prev_point = store_len;
     for (i = main_location + 2; i < m_list_len; i++) {
         if (m_list[i].type == VARIABLE_SPECIFICATION && m_list[i].c_len == 4) {
             init_array(i);
@@ -210,13 +252,22 @@ void generate_mips() {
         else if (m_list[i].type == LABLE) {
             mips_code_print(m_list[i].code[0]);
         }
-        else if (m_list[i].type == FUNCTION_CALL_PARAMETER) {
-            generate_function_call_param(i);
-            while (m_list[i].type == FUNCTION_CALL_PARAMETER) i++;
-            i--;
-        }
+//        else if (m_list[i].type == FUNCTION_CALL_PARAMETER) {
+//            generate_function_call_param(i);
+//            while (m_list[i].type == FUNCTION_CALL_PARAMETER) i++;
+//            i--;
+//        }
         else if (m_list[i].type == FUNCTION_CALL) {
+//            generate_function_call_param(i);
+//            generate_function_call(i);
+            mips_code_print("addi $sp, $sp, -4");
+            mips_code_print("sw $ra, 0($sp)");
+            save_recursion_var(prev_point, store_len);
+            generate_function_call_param(i);
             generate_function_call(i);
+            reload_recursion_var();
+            mips_code_print("lw $ra, 0($sp)");
+            mips_code_print("addi $sp, $sp, 4");
         }
     }
     mips_code_print("li $v0, 10");
@@ -348,8 +399,8 @@ void generate_read_statement(int location) {
         mips_code_print(out);
     }
     else {
-        flush_register(location);
         add_var(m_list[location].code[1], "$v0", m_list[location].kind);
+        flush_register(location);
     }
 }
 
@@ -374,9 +425,14 @@ void generate_write_statement_1(int location) {
             sprintf(out, "li $a0, 0x%x", m_list[location].code[2][1]);
         }
         else if ((l = find_const_value(m_list[location].code[2])) >= 0) {
-            if (equal(m_list[l].code[1], "int")) mips_code_print("li $v0, 1");
-            else mips_code_print("li $v0, 11");
-            sprintf(out, "li $a0, 0x%x", atoi(m_list[l].code[4])); //看看这样写有没有问题，字符型也用atoi
+            if (equal(m_list[l].code[1], "int")) {
+                mips_code_print("li $v0, 1");
+                sprintf(out, "li $a0, 0x%x", atoi(m_list[l].code[4]));
+            }
+            else {
+                mips_code_print("li $v0, 11");
+                sprintf(out, "li $a0, 0x%x", m_list[l].code[4][0]);
+            }
         }
         else {
             if (generate_array(m_list[location].code[2], cal, "$a0", 0) >= 0) {
@@ -430,9 +486,15 @@ void generate_write_statement_3(int location) {
             sprintf(out, "li $a0, 0x%x", m_list[location].code[1][1]);
         }
         else if ((l = find_const_value(m_list[location].code[1])) >= 0) {
-            if (equal(m_list[l].code[1], "int")) mips_code_print("li $v0, 1");
-            else mips_code_print("li $v0, 11");
-            sprintf(out, "li $a0, 0x%x", atoi(m_list[l].code[4])); //看看这样写有没有问题，字符型也用atoi
+            if (equal(m_list[l].code[1], "int")) {
+                mips_code_print("li $v0, 1");
+                sprintf(out, "li $a0, 0x%x", atoi(m_list[l].code[4]));
+            }
+            else {
+                mips_code_print("li $v0, 11");
+                sprintf(out, "li $a0, 0x%x", m_list[l].code[4][0]);
+            }
+            //sprintf(out, "li $a0, 0x%x", atoi(m_list[l].code[4])); //看看这样写有没有问题，字符型也用atoi.***有问题
         }
         else {
             if (generate_array(m_list[location].code[1], cal, "$a0", 0) >= 0) {
@@ -491,8 +553,8 @@ void generate_calculate_statement(int location) {
         else {
             sprintf(out, "add $t0, %s, %s", cal_1, cal_2);
             mips_code_print(out);
-            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
+            flush_register(location);
         }
     }
     else if (equal(m_list[location].code[3], "-")) {
@@ -514,8 +576,8 @@ void generate_calculate_statement(int location) {
         else {
             sprintf(out, "sub $t0, %s, %s", cal_1, cal_2);
             mips_code_print(out);
-            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
+            flush_register(location);
         }
     }
     else if (equal(m_list[location].code[3], "*")) {
@@ -536,8 +598,8 @@ void generate_calculate_statement(int location) {
         }
         else {
             mips_code_print("mflo $t0");
-            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
+            flush_register(location);
         }
     }
     else if (equal(m_list[location].code[3], "/")) {
@@ -558,8 +620,8 @@ void generate_calculate_statement(int location) {
         }
         else {
             mips_code_print("mflo $t0");
-            flush_register(location);
             add_var(m_list[location].code[0], "$t0", 0);
+            flush_register(location);
         }
     }
 }
@@ -635,8 +697,8 @@ void generate_assignment_statement(int location) {
         mips_code_print(out);
     }
     else {
-        flush_register(location);
         add_var(m_list[location].code[0], cal_1, m_list[location].kind);
+        flush_register(location);
     }
 }
 
@@ -740,24 +802,30 @@ void generate_function(int location) {
         else if (m_list[i].type == LABLE) {
             mips_code_print(m_list[i].code[0]);
         }
-        else if (m_list[i].type == FUNCTION_CALL_PARAMETER) {
-            generate_function_call_param(i);
-            while (m_list[i].type == FUNCTION_CALL_PARAMETER) i++;
-            i--;
-        }
+//        else if (m_list[i].type == FUNCTION_CALL_PARAMETER) {
+//            generate_function_call_param(i);
+//            while (m_list[i].type == FUNCTION_CALL_PARAMETER) i++;
+//            i--;
+//        }
         else if (m_list[i].type == FUNCTION_CALL) {
-            if (equal(func_name, m_list[i].code[1])) {
-                save_recursion_var(prev_point, store_len);
-                generate_function_call(i);
-                reload_recursion_var();
-                mips_code_print("lw $ra, 0($sp)");
-                mips_code_print("addi $sp, $sp, 4");
-            }
-            else {
-                generate_function_call(i);
-                mips_code_print("lw $ra, 0($sp)");
-                mips_code_print("addi $sp, $sp, 4");
-            }
+//            if (equal(func_name, m_list[i].code[1])) {
+            mips_code_print("addi $sp, $sp, -4");
+            mips_code_print("sw $ra, 0($sp)");
+            save_recursion_var(prev_point, store_len);
+            generate_function_call_param(i);
+            generate_function_call(i);
+            reload_recursion_var();
+            mips_code_print("lw $ra, 0($sp)");
+            mips_code_print("addi $sp, $sp, 4");
+//            }
+//            else {
+//                mips_code_print("addi $sp, $sp, -4");
+//                mips_code_print("sw $ra, 0($sp)");
+//                generate_function_call_param(i);
+//                generate_function_call(i);
+//                mips_code_print("lw $ra, 0($sp)");
+//                mips_code_print("addi $sp, $sp, 4");
+//            }
         }
         else if (m_list[i].type == RETURN_STATEMENT) {
             generate_return_statement(i);
@@ -827,12 +895,17 @@ void generate_function_call(int location) {
 
 void generate_function_call_param(int location) {
     char out[100], cal[100], write_reg[100];
-    int i, cnt = 0;
-    mips_code_print("addi $sp, $sp, -4");
-    mips_code_print("sw $ra, 0($sp)");
-    for (i = location; m_list[i].type == FUNCTION_CALL_PARAMETER; i++) {
+    int i, cnt = 0, l;
+//    mips_code_print("addi $sp, $sp, -4");
+//    mips_code_print("sw $ra, 0($sp)");
+    for (l = location - 1; m_list[l].type == FUNCTION_CALL_PARAMETER; l--);
+    for (i = l + 1; m_list[i].type == FUNCTION_CALL_PARAMETER; i++) {
         if (cnt < 4) {
             sprintf(write_reg, "$a%d", cnt);
+            if (generate_array(m_list[i].code[1], cal, write_reg, 0) >= 0) {
+                cnt++;
+                continue;
+            }
             generate_calculate_operand(i, 1, cal, write_reg);
             if (!equal(cal, write_reg)) {
                 sprintf(out, "move %s, %s", write_reg, cal);
@@ -842,13 +915,15 @@ void generate_function_call_param(int location) {
         cnt++;
     }
     for (i = cnt; i > 4; i--) {
-        generate_calculate_operand(location + i - 1, 1, cal, "$t0");
-        if (!equal(cal, write_reg)) {
-            sprintf(out, "move $t0, %s", cal);
-            mips_code_print(out);
+        if (generate_array(m_list[i].code[1], cal, "$t0", 0) < 0) {
+            generate_calculate_operand(l + i, 1, cal, "$t0");
         }
+//        if (!equal(cal, write_reg)) {
+//            sprintf(out, "move $t0, %s", cal);
+//            mips_code_print(out);
+//        }
         mips_code_print("addi $sp, $sp, -4");
-        mips_code_print("sw $t0, 0($sp)");
+        sprintf(out, "sw %s, 0($sp)", cal);
         mips_code_print(out);
     }
 }
@@ -859,15 +934,15 @@ void generate_param(int location) {
     for (i = location; m_list[i].type == PARAMETER; i++) {
         if (cnt < 4) {
             sprintf(read_reg, "$a%d", cnt);
-            flush_register(i);
             add_var(m_list[i].code[2], read_reg, m_list[i].kind);
+            flush_register(i);
         }
         else {
             mips_code_print("lw $t0, 0($sp)");
             mips_code_print("addi $sp, $sp, 4");
             mips_code_print(out);
-            flush_register(i);
             add_var(m_list[i].code[2], "$t0", m_list[i].kind);
+            flush_register(i);
         }
         cnt++;
     }

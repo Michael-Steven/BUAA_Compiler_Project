@@ -589,13 +589,20 @@ Parser conditional_statement() {
     print_word(sym);
     getsym();
     check(statement())
-    m_list[m_list_len++] = middle_code_create(JUMP_STATEMENT, 0, 2, "GOTO", if_end_use);
-    //不满足条件跳转到的label设在这里
-    m_list[m_list_len++] = middle_code_create(LABLE, 0, 1, out);
+//    m_list[m_list_len++] = middle_code_create(JUMP_STATEMENT, 0, 2, "GOTO", if_end_use);
+//    //不满足条件跳转到的label设在这里
+//    m_list[m_list_len++] = middle_code_create(LABLE, 0, 1, out);
     if (equal(sym.content, "else")) {
+        m_list[m_list_len++] = middle_code_create(JUMP_STATEMENT, 0, 2, "GOTO", if_end_use);
+        //不满足条件跳转到的label设在这里
+        m_list[m_list_len++] = middle_code_create(LABLE, 0, 1, out);
         print_word(sym);
         getsym();
         check(statement())
+    }
+    else {
+        //不满足条件跳转到的label设在这里
+        m_list[m_list_len++] = middle_code_create(LABLE, 0, 1, out);
     }
     //end_label
     m_list[m_list_len++] = middle_code_create(LABLE, 0, 1, if_end);
@@ -791,7 +798,7 @@ Parser func_call_statement() {
         parser_print("<有返回值函数调用语句>\n");
         ret.kind = return_func_kind[l];
         m_list[m_list_len++] = middle_code_create(FUNCTION_CALL, 0, 2, "call", func);
-        sprintf(out, "$reg%d", reg_cnt++);
+        sprintf(out, "$temp%d", reg_cnt++);
         m_list[m_list_len++] = middle_code_create(ASSIGNMENT_STATEMENT, ret.kind, 3, out, "=", "RET");
         strcpy(ret.content[0], out);
     }

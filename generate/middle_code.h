@@ -8,6 +8,15 @@ typedef struct {
     char code[6][100];
 } Middle_code;
 
+typedef struct {
+    char name[100];
+    int nparam;
+    char param[100][100];
+    int ncode;
+    Middle_code code[1000];
+    char ret[100];
+} Inline_func;
+
 #define DECLARATION_HEADER          1  //函数声明头部
 #define PARAMETER                   2  //函数参数
 #define FUNCTION_CALL_PARAMETER     3  //函数调用参数
@@ -30,5 +39,15 @@ typedef struct {
 Middle_code middle_code_create(int type, int kind, int num, ...);
 
 void middle_code_print();
+
+void middle_code_optimize();
+
+void clear();
+
+void inline_optimize();
+
+int inline_list_create(int location);
+
+void inline_code_insert(int n, int location, int *end);
 
 #endif //GENERATE_MIDDLE_CODE_H

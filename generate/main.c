@@ -9,7 +9,7 @@
 extern char c;
 
 int main() {
-    system("rm parser_out.txt middle_code.txt mips.txt error.txt");
+//    freopen("30.in", "r", stdin);
     freopen("testfile.txt", "r", stdin);
 #ifdef PARSER_OUT
     parser_out = fopen("parser_out.txt", "w");
@@ -26,6 +26,7 @@ int main() {
     c = getchar();
     getsym();
     parse();
+    middle_code_optimize();
     middle_code_print();
     generate_mips();
     fclose(stdin);
