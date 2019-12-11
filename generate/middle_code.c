@@ -101,7 +101,8 @@ void clear() {
 }
 
 void inline_optimize() {
-    int i, j, k, head, tail;
+    int i, j, k, l, head, tail, flag;
+    char out[100];
     for (i = 0; i < main_location; i++) {
         if (m_list[i].type == DECLARATION_HEADER) {
             inline_list_create(i);
@@ -114,6 +115,7 @@ void inline_optimize() {
         if (m_list[i].type == FUNCTION_CALL) {
             for (j = 0; j < ninline; j++) {
                 if (equal(m_list[i].code[1], inline_list[j].name)) {
+                    inline_list[j].usage++;
                     int nparam = 0;
                     head = i;
                     tail = i;
@@ -122,22 +124,37 @@ void inline_optimize() {
                         tail++;
                     for (k = head; k <= tail; k++) {
                         if (m_list[k].type == FUNCTION_CALL_PARAMETER) {
+                            sprintf(out, "%s@%d", inline_list[j].param[nparam++], inline_list[j].usage);
                             m_list[k] = middle_code_create(ASSIGNMENT_STATEMENT, m_list[k].kind, 3,
-                                                           inline_list[j].param[nparam++], "=", m_list[k].code[1]);
+                                                           out, "=", m_list[k].code[1]);
                         }
                         else if (m_list[k].type == FUNCTION_CALL) {
                             inline_code_insert(j, k, &tail);
                             k--;
                         }
                         else if (m_list[k].type == ASSIGNMENT_STATEMENT && equal(m_list[k].code[2], "RET")) {
-                            strcpy(m_list[k].code[2], inline_list[j].ret);
+                            flag = 0;
+                            for (l = 0; l < inline_list[j].nparam; l++) {
+                                if (equal(inline_list[j].ret, inline_list[j].param[l])) {
+                                    sprintf(m_list[k].code[2], "%s@%d", inline_list[j].ret, inline_list[j].usage);
+                                    flag = 1;
+                                    break;
+                                }
+                            }
+                            if (flag == 0) {
+                                if (inline_list[j].ret[0] == '$') {
+                                    sprintf(m_list[k].code[2], "%s@%d", inline_list[j].ret, inline_list[j].usage);
+                                }
+                                else {
+                                    strcpy(m_list[k].code[2], inline_list[j].ret);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
-//    printf("1");
 }
 
 int inline_list_create(int location) {
@@ -167,7 +184,8 @@ int inline_list_create(int location) {
 }
 
 void inline_code_insert(int n, int location, int *end) {
-    int i, j;
+    int i, j, k, flag;
+    char out[100];
     Middle_code temp;
     for (i = location; i < m_list_len - 1; i++) {
         m_list[i] = m_list[i + 1];
@@ -182,7 +200,22 @@ void inline_code_insert(int n, int location, int *end) {
         temp.c_len = 0;
         temp.kind = inline_list[n].code[i].kind;
         for (j = 0; j < inline_list[n].code[i].c_len; j++) {
-            strcpy(temp.code[temp.c_len++], inline_list[n].code[i].code[j]);
+            flag = 0;
+            for (k = 0; k < inline_list[n].nparam; k++) {
+                if (equal(inline_list[n].code[i].code[j], inline_list[n].param[k])) {
+                    sprintf(temp.code[temp.c_len++], "%s@%d", inline_list[n].code[i].code[j], inline_list[n].usage);
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0) {
+                if (inline_list[n].code[i].code[j][0] == '$') {
+                    sprintf(temp.code[temp.c_len++], "%s@%d", inline_list[n].code[i].code[j], inline_list[n].usage);
+                }
+                else {
+                    strcpy(temp.code[temp.c_len++], inline_list[n].code[i].code[j]);
+                }
+            }
         }
         for (j = m_list_len; j > location; j--) {
             m_list[j] = m_list[j - 1];

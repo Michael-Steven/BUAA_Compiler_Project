@@ -51,52 +51,51 @@ int is_space_t() {
 }
 
 void flush_register(int location) {
-/*
-    int i, j, k, l, reg, flag, n, flag2;
-    char temp[100];
-    for (i = global_end + 1; i < store_len; i++) {
-        reg = store_list[i].reg;
-        if (reg >= 0) {
-            flag = 0;
-            for (j = location + 1; j < m_list_len; j++) {
-                for (k = 0; k < m_list[j].c_len; k++) {
-                    if (equal(m_list[j].code[k], store_list[i].var)) {
-                        flag = 1;
-                        break;
-                    }
-                    else {
-                        n = strlen(m_list[j].code[k]);
-                        if (n < strlen(store_list[i].var)) continue;
-                        flag2 = 0;
-                        for (l = 0; l < n; l++) {
-                            if (m_list[j].code[k][l] == '[') {
-                                strcpy(temp, &m_list[j].code[k][l + 1]);
-                                flag2 = 1;
-                                break;
-                            }
-                        }
-                        if (flag2 == 1) {
-                            n = strlen(temp);
-                            for (l = 0; l < n; l++) {
-                                if (temp[l] == ']') temp[l] = '\0';
-                            }
-                            if (equal(temp, store_list[i].var)) {
-                                flag = 1;
-                            }
-                        }
-                    }
-                }
-                if (flag == 1) {
-                    break;
-                }
-            }
-            if (flag == 0) {
-                store_list[i].reg = -2;
-                usage[reg] = 0;
-            }
-        }
-    }
-*/
+//    int i, j, k, l, reg, flag, n, flag2;
+//    char temp[100];
+//    for (i = global_end + 1; i < store_len; i++) {
+//        reg = store_list[i].reg;
+//        if (reg >= 0) {
+//            flag = 0;
+//            if(equal(store_list[i].var, "leap")) return;// 这要改
+//            for (j = location + 1; j < m_list_len; j++) {
+//                for (k = 0; k < m_list[j].c_len; k++) {
+//                    if (equal(m_list[j].code[k], store_list[i].var)) {
+//                        flag = 1;
+//                        break;
+//                    }
+//                    else {
+//                        n = strlen(m_list[j].code[k]);
+//                        if (n < strlen(store_list[i].var)) continue;
+//                        flag2 = 0;
+//                        for (l = 0; l < n; l++) {
+//                            if (m_list[j].code[k][l] == '[') {
+//                                strcpy(temp, &m_list[j].code[k][l + 1]);
+//                                flag2 = 1;
+//                                break;
+//                            }
+//                        }
+//                        if (flag2 == 1) {
+//                            n = strlen(temp);
+//                            for (l = 0; l < n; l++) {
+//                                if (temp[l] == ']') temp[l] = '\0';
+//                            }
+//                            if (equal(temp, store_list[i].var)) {
+//                                flag = 1;
+//                            }
+//                        }
+//                    }
+//                }
+//                if (flag == 1) {
+//                    break;
+//                }
+//            }
+//            if (flag == 0) {
+//                store_list[i].reg = -2;
+//                usage[reg] = 0;
+//            }
+//        }
+//    }
 }
 
 void add_var(char *var, char *value_reg, int type) {
@@ -929,7 +928,7 @@ void generate_function_call_param(int location) {
 }
 
 void generate_param(int location) {
-    char out[100], read_reg[100];
+    char read_reg[100];
     int i, cnt = 0;
     for (i = location; m_list[i].type == PARAMETER; i++) {
         if (cnt < 4) {
@@ -940,7 +939,6 @@ void generate_param(int location) {
         else {
             mips_code_print("lw $t0, 0($sp)");
             mips_code_print("addi $sp, $sp, 4");
-            mips_code_print(out);
             add_var(m_list[i].code[2], "$t0", m_list[i].kind);
             flush_register(i);
         }

@@ -10,6 +10,7 @@ typedef struct {
 
 typedef struct {
     char name[100];
+    int usage;
     int nparam;
     char param[100][100];
     int ncode;
